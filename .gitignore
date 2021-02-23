@@ -1,0 +1,4 @@
+./bin/**
+./storage/db/**
+./storage/redis/**
+./storage/storage/**

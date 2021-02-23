@@ -1,0 +1,104 @@
+version: '3'
+
+services:
+  app:
+    restart: unless-stopped
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8081"
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ../:/var/www/html:delegated
+      - ./storage/storage:/var/www/html/storage:delegated
+
+      - ./apache/apache2.conf:/etc/apache2/apache2.conf
+      - ./apache/000-default.conf:/etc/apache2/sites-available/000-default.conf
+      - ./apache/ports.conf:/etc/apache2/ports.conf
+
+      - ./php/php.ini-development:/usr/local/etc/php/php.ini
+    networks:
+      - crmnet
+
+  ## caso precise em uma versão 2.0
+  # queue:
+  #   container_name: queue
+  #   restart: unless-stopped
+  #   build:
+  #     context: ./docker
+  #     dockerfile: Dockerfile
+  #   depends_on:
+  #     - db
+  #     - redis
+  #   volumes:
+  #     - ./application:/var/www/html
+  #     - ./storage/storage:/var/www/html/storage
+
+  #     - ./docker/apache/apache2.conf:/etc/apache2/apache2.conf
+  #     - ./docker/apache/000-default.conf:/etc/apache2/sites-available/000-default.conf
+  #     - ./docker/apache/ports.conf:/etc/apache2/ports.conf
+
+  #     - ./docker/php/php.ini-development:/usr/local/etc/php/php.ini
+  #   command: php artisan queue:work --queue=default,high,normal,low --tries=3 --timeout=40 --stop-when-empty
+  #   networks:
+  #     - crmnet
+
+  # cron:
+  #   container_name: cron
+  #   restart: unless-stopped
+  #   build:
+  #     context: ./docker
+  #     dockerfile: Dockerfile
+  #   volumes:
+  #     - ./application:/var/www/html
+  #     - ./storage/storage:/var/www/html/storage
+
+  #     - ./docker/apache/apache2.conf:/etc/apache2/apache2.conf
+  #     - ./docker/apache/000-default.conf:/etc/apache2/sites-available/000-default.conf
+  #     - ./docker/apache/ports.conf:/etc/apache2/ports.conf
+
+  #     - ./docker/php/php.ini-development:/usr/local/etc/php/php.ini
+
+  #     - ./docker/scheduler:/etc/cron.d/scheduler
+  #   command: cron -f
+  #   depends_on:
+  #     - db
+  #     - redis
+  #   networks:
+  #     - crmnet
+
+  db:
+    image: mysql:5.7
+    restart: unless-stopped
+    tty: true
+    volumes:
+      - ./storage/db:/var/lib/mysql:delegated
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_DATABASE=masterix
+      - MYSQL_USER=docker
+      - MYSQL_PASSWORD=_c0d!04s_
+      - MYSQL_ROOT_PASSWORD=_c0d!04s_
+    networks:
+      - crmnet
+
+  redis:
+    image: redis:latest
+    restart: always
+    command: --appendonly yes --requirepass _c0d!04s_
+    volumes:
+      - ./storage/redis:/data
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PORT=6379
+    networks:
+      - crmnet
+
+networks:
+  crmnet:
+    driver: bridge
